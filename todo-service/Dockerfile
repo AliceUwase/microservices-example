@@ -1,4 +1,5 @@
-FROM node:14-alpine
+FROM node:22-alpine
+RUN apk add --no-cache curl
 COPY ./ /app/
 WORKDIR /app
 RUN npm install

@@ -1,10 +1,13 @@
-FROM python:3.8.10
+FROM python:3.11-slim
 
 WORKDIR /app
 COPY . .
 
-RUN pip3 install poetry
+RUN pip install --no-cache-dir poetry
 RUN poetry config virtualenvs.create false
-RUN poetry install --no-dev
+RUN poetry lock
+RUN poetry install --without dev --no-root
 
-ENTRYPOINT ["uvicorn", "app:app", "--host", "0.0.0.0"]
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+
+ENTRYPOINT ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -1,7 +1,7 @@
-FROM golang:alpine
-RUN apk add --no-cache git bash
+FROM golang:1.26-alpine
+RUN apk add --no-cache git bash netcat-openbsd
 WORKDIR /app
 COPY . .
 RUN go mod tidy
-RUN go build server.go
-ENTRYPOINT ["bash", "-c", "/app/server"]
+RUN go build -o server .
+ENTRYPOINT ["/app/server"]

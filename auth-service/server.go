@@ -12,6 +12,14 @@ import (
 	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
 
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
+
 	DB "microservices/auth-service/db"
 	pb "microservices/auth-service/protobuf"
 	"microservices/auth-service/util"
@@ -78,7 +86,14 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	grpcServer := grpc.NewServer()
+	// OpenTelemetry setup
+	res, _ := resource.New(context.Background(), resource.WithAttributes(semconv.ServiceName("auth-service")))
+	exp, _ := otlptracegrpc.New(context.Background(), otlptracegrpc.WithEndpoint("otel-collector:4317"), otlptracegrpc.WithInsecure())
+	tp := sdktrace.NewTracerProvider(sdktrace.WithBatcher(exp), sdktrace.WithResource(res))
+	otel.SetTracerProvider(tp)
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+
+	grpcServer := grpc.NewServer(grpc.StatsHandler(otelgrpc.NewServerHandler()))
 	pb.RegisterAuthServiceServer(grpcServer, &authService{db: db})
 	log.Printf("server listening at %v", lis.Addr())
 	if err := grpcServer.Serve(lis); err != nil {

@@ -8,6 +8,6 @@ RUN poetry config virtualenvs.create false
 RUN poetry lock
 RUN poetry install --without dev --no-root
 
-RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
+ENV PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
 ENTRYPOINT ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
